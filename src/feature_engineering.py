@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+import networkx as nx
 
 def engineer_features(df):
     # Step 1: Sort chronologically — CRITICAL for velocity features
@@ -63,6 +64,35 @@ def engineer_features(df):
     # We compute the sender's historical average amount first
     sender_avg = df.groupby('sender_account')['amount'].transform('mean')
     df['amount_vs_avg'] = df['amount'] / (sender_avg + 1e-9)  # +1e-9 avoids divide by zero
-
     print("  Velocity features done!")
+
+    # ── NEW GRAPH ML FEATURES (NETWORKX) ─────────────────────────────────────
+    print("  Building transaction graph for Network features...")
+    
+    # 1. Fast Degree Features via Pandas (Unique counterparties)
+    # How many UNIQUE accounts does this sender send to? (Launderers disburse money widely)
+    out_degree = df.groupby('sender_account')['receiver_account'].nunique()
+    df['sender_out_degree'] = df['sender_account'].map(out_degree).fillna(0)
+    
+    # How many UNIQUE accounts does this receiver get money from? (Mules receive from many victims)
+    in_degree = df.groupby('receiver_account')['sender_account'].nunique()
+    df['receiver_in_degree'] = df['receiver_account'].map(in_degree).fillna(0)
+    
+    # 2. PageRank via NetworkX
+    print("  Computing PageRank (this may take a few minutes)...")
+    # Build a directed graph from the transactions
+    G = nx.from_pandas_edgelist(df, source='sender_account', target='receiver_account', create_using=nx.DiGraph())
+    
+    # Calculate PageRank (max_iter=30 to keep it fast on 9.5M rows)
+    try:
+        pageranks = nx.pagerank(G, alpha=0.85, max_iter=30)
+    except nx.PowerIterationFailedConvergence:
+        print("  Warning: PageRank failed to converge fully, using fallback...")
+        pageranks = nx.pagerank(G, alpha=0.85, max_iter=10) # Fallback if it fails
+
+    # Map PageRank scores back to the dataframe
+    df['sender_pagerank'] = df['sender_account'].map(pageranks).fillna(0)
+    df['receiver_pagerank'] = df['receiver_account'].map(pageranks).fillna(0)
+
+    print("  Graph features done!")
     return df
