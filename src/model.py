@@ -2,31 +2,24 @@ from xgboost import XGBClassifier
 
 def get_model():
     """
-    Define and return the XGBoost classifier.
+    XGBoost Classifier — Variation log:
 
-    XGBoost (eXtreme Gradient Boosting) is an ensemble method — it builds
-    hundreds of decision trees one after another, where each new tree tries
-    to correct the mistakes of the previous ones. The final prediction is
-    a vote across all trees.
+    V1 (ACTIVE) : n_estimators=1000, lr=0.05, scale_pos_weight handled in train.py
+                  WHY: logloss was still falling at tree 499, so we give it 1000 trees
+                  RESULT: TBD
 
-    Hyperparameter explanations:
-    - n_estimators=500   : Build 500 trees. More trees = better accuracy but slower.
-    - max_depth=8        : Each tree can have at most 8 levels of splits.
-                           Deeper = more complex patterns, but risks overfitting.
-    - learning_rate=0.05 : How much each new tree corrects the previous errors.
-                           Small = slower but more precise learning.
-    - subsample=0.8      : Each tree is trained on a random 80% of the data.
-                           This prevents overfitting (memorizing training data).
-    - colsample_bytree=0.8: Each tree uses a random 80% of features.
-                           Forces the model to learn diverse patterns.
-    - tree_method="hist" : Uses histogram-based algorithm — much faster for large datasets.
-    - device="cuda"      : Run on GPU (NVIDIA CUDA). ~10-20x faster than CPU.
-                           Falls back to CPU if no GPU is available.
-    - eval_metric="logloss": Measures error using log loss (good for binary classification).
-    - random_state=42    : Seed for reproducibility — same results every run.
+    V2 (next)   : n_estimators=1000, learning_rate=0.01
+                  WHY: slower learning rate = more careful correction per tree
+                  EXPECTED: better precision, less overfitting
+
+    V3 (next)   : n_estimators=500, scale_pos_weight=50 (instead of ~962)
+                  WHY: 962x was too aggressive causing tons of false positives
+                  EXPECTED: better precision, lower recall
     """
+
+    # ── V1: More trees (ACTIVE) ──────────────────────────────────────────────
     return XGBClassifier(
-        n_estimators=500,
+        n_estimators=1000,      # was 500 — logloss still falling at tree 499
         max_depth=8,
         learning_rate=0.05,
         subsample=0.8,
@@ -36,3 +29,30 @@ def get_model():
         eval_metric="logloss",
         random_state=42
     )
+
+    # ── V2: Lower learning rate ──────────────────────────────────────────────
+    # return XGBClassifier(
+    #     n_estimators=1000,
+    #     max_depth=8,
+    #     learning_rate=0.01,    # slower, more precise corrections
+    #     subsample=0.8,
+    #     colsample_bytree=0.8,
+    #     tree_method="hist",
+    #     device="cuda",
+    #     eval_metric="logloss",
+    #     random_state=42
+    # )
+
+    # ── V3: Reduce scale_pos_weight to fix false positives ───────────────────
+    # return XGBClassifier(
+    #     n_estimators=500,
+    #     max_depth=8,
+    #     learning_rate=0.05,
+    #     subsample=0.8,
+    #     colsample_bytree=0.8,
+    #     tree_method="hist",
+    #     device="cuda",
+    #     eval_metric="logloss",
+    #     scale_pos_weight=50,   # instead of ~962, less aggressive balancing
+    #     random_state=42
+    # )
