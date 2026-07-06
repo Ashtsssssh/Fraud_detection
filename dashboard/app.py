@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import joblib
 import os
+import random
 from PIL import Image
 
 st.set_page_config(page_title="Sentinel Graph AI", layout="wide", page_icon="🛡️")
@@ -43,19 +44,26 @@ def load_model():
 @st.cache_data
 def load_data():
     data_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "processed", "features.csv")
-    return pd.read_csv(data_path)
+    
+    # MEMORY FIX: Instead of loading 9.5 Million rows into RAM (which causes MemoryError during caching),
+    # we randomly skip 99.4% of the rows *during* the read process to pull a fast ~50k sample directly.
+    def skip_logic(index):
+        if index == 0:
+            return False # Keep header
+        return random.random() > 0.0055 
+
+    return pd.read_csv(data_path, skiprows=skip_logic)
 
 with st.spinner("Initializing Graph ML Models and loading transaction network..."):
     data = load_model()
     model = data["model"]
     threshold = data["threshold"]
-    df = load_data()
+    
+    # Data is already sampled to ~50k rows to prevent RAM crashes
+    sample_df = load_data()
 
 # Tabs for organization
 tab1, tab2, tab3 = st.tabs(["🚨 Live Alert Queue", "🕸️ Network Analysis", "🧠 AI Explainability"])
-
-# We take a sample of 50,000 transactions to keep the dashboard responsive
-sample_df = df.sample(50000, random_state=42).copy()
 
 cols_to_drop = ['is_suspicious', 'timestamp', 'Date', 'Time', 
                 'sender_account', 'receiver_account',
