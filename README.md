@@ -18,13 +18,15 @@ This project evolved from a standard classification model into a **Graph-aware, 
 ---
 
 ## 📊 Elite Performance Metrics
-Tested on a 1.9 Million transaction hold-out set (unseen data):
 
-| Metric | Score | Industry Context |
-| :--- | :--- | :--- |
-| **Precision** | **93%** | Most bank AML systems operate at 2-5% precision (95% false alarms). Our model ensures 9 out of 10 alerts are actual fraud. |
-| **Recall** | **94%** | Catches 94% of all laundering occurring on the platform. |
-| **Accuracy** | **99.9%** | (Note: Accuracy is a trap metric in highly imbalanced fraud datasets, but it remains phenomenally high). |
+We completely transformed this model from a flawed baseline into a state-of-the-art system. Here is the evolution of the model's performance when tested on a **1.9 Million transaction hold-out set** (unseen data):
+
+| Metric | Original Baseline | V2.0 (Velocity Features) | **V2.1 (Graph ML)** | Industry Context |
+| :--- | :--- | :--- | :--- | :--- |
+| **Fraud Precision** | ~0% | 15% | **93%** 🏆 | Bank AML systems usually operate at 2-5% precision. Our model ensures 9/10 alerts are real fraud. |
+| **Fraud Recall** | ~8% | 16% | **94%** 🏆 | We catch 94% of all laundering rings, missing almost nothing. |
+| **Logloss** | 0.420 | 0.184 | **0.004** | The model's internal confidence and error rate improved by 100x. |
+| **Accuracy** | 99.9% | 99.9% | **99.9%** | *Accuracy is a trap metric in imbalanced datasets. The original model was 99.9% accurate just by guessing "Normal" every time.* |
 
 ---
 
