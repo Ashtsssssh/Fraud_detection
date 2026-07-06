@@ -115,7 +115,7 @@ with tab1:
             'sender_pagerank': 'Network Centrality',
             'high_risk_country': 'High Risk Destination'
         })
-        st.dataframe(readable_df, use_container_width=True, hide_index=True)
+        st.dataframe(readable_df, hide_index=True)
     else:
         st.success("No suspicious transactions found in this batch!")
 
@@ -146,6 +146,6 @@ with tab3:
     shap_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "models", "shap_summary.png")
     if os.path.exists(shap_path):
         img = Image.open(shap_path)
-        st.image(img, caption="Global Feature Importance (Notice how Graph Features dominate the decision making)", use_column_width=True)
+        st.image(img, caption="Global Feature Importance (Notice how Graph Features dominate the decision making)", use_container_width=True)
     else:
         st.error(f"SHAP summary image not found at {shap_path}. Please run the pipeline to generate it.")
